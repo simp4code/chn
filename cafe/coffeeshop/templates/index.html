@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title>CHNCafe</title>
+    <style>
+        /* CSS rules for coffee cards */
+        .coffee-list {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            /* Center the content horizontally */
+        }
+
+        .coffee-card {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 5px;
+            margin: 5px;
+            width: 250px;
+            /* Adjust the width of each card */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .coffee-image img {
+            width: 100%;
+            /* Image fills the width of its container */
+            height: auto;
+            border-radius: 5px;
+        }
+
+        .coffee-details {
+            flex-grow: 1;
+            /* Allow details section to grow to fill remaining space */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .coffee-details h3,
+        .coffee-details p {
+            text-align: center;
+            /* Center text horizontally */
+            margin: 5px 0;
+            /* Add some margin between elements */
+        }
+
+        form {
+            text-align: center;
+            /* Center form elements horizontally */
+        }
+
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="number"] {
+            width: 50%;
+            max-width: 100px;
+            /* Adjust the maximum width as needed */
+            margin-bottom: 10px;
+        }
+
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 10px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition-duration: 0.4s;
+            width: 100%;
+            max-width: 100px;
+            /* Adjust the maximum width as needed */
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        /* CSS for the modal */
+        #cart-modal {
+            display: none;
+            /* Hide the modal by default */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="{%  url 'admin'%}">Admin</a>
+    <h1>Coffee Menu</h1>
+    <a href="{% url 'view_cart' %}" id="view-cart">View Cart</a>
+
+    <div id="cart-modal" class="modal">
+        <div class="modal-content" id="cart-content">
+            <!-- Close button -->
+            <span class="close" id="close-modal">&times;</span>
+            
+        </div>
+    </div>
+
+    <!-- Your JavaScript code -->
+    <script>
+       document.addEventListener("DOMContentLoaded", function () {
+    var viewCartLink = document.getElementById("view-cart");
+    var modal = document.getElementById("cart-modal");
+    var cartContent = document.getElementById("cart-content");
+    var checkoutBtn = document.getElementById("checkout-btn");
+    var closeModalBtn = document.getElementById("close-modal"); // Close modal button
+
+    // Event listener for the View Cart link
+    viewCartLink.addEventListener("click", function (event) {
+        event.preventDefault(); // Prevent default link behavior
+
+        // Load the cart content into the modal via AJAX
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "{% url 'view_cart' %}", true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                cartContent.innerHTML = xhr.responseText;
+                modal.style.display = "block"; // Display the modal
+            }
+        };
+        xhr.send();
+    });
+
+    // Event listener for the checkout button
+    checkoutBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+
+        // Send AJAX request to checkout endpoint
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "{% url 'checkout' %}", true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                var responseData = JSON.parse(xhr.responseText);
+                var qrCode = responseData.qr_code;
+                var verificationCode = responseData.verification_code;
+
+                // Display QR code in modal
+                var qrImg = document.createElement("img");
+                qrImg.src = "data:image/png;base64," + qrCode;
+                cartContent.innerHTML = ""; // Clear existing content
+                cartContent.appendChild(qrImg);
+
+                // Display verification code
+                var verificationPara = document.createElement("p");
+                verificationPara.textContent = "Verification Code: " + verificationCode;
+                cartContent.appendChild(verificationPara);
+            }
+        };
+        xhr.send();
+    });
+
+    // Event listener to close the modal when clicking the close button
+    closeModalBtn.addEventListener("click", function () {
+        modal.style.display = "none";
+    });
+
+    // Event listener to close the modal when clicking outside of it
+    window.onclick = function (event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    };
+});
+
+    </script>
+
+    <ul class="coffee-list">
+        {% for coffee in coffees %}
+        <li class="coffee-card">
+            <div class="coffee-image">
+                <img src="{{ coffee.img.url }}" alt="{{ coffee.name }}">
+            </div>
+
+            <div class="coffee-details">
+                <h3>{{ coffee.name }}</h3>
+                <p class="coffee-price" style="color:red">Php {{ coffee.price }}</p>
+                <br>
+                <form action="{% url 'add_to_cart' %}" method="post">
+                    {% csrf_token %}
+                    <div class="quantity">
+                        <label for="quantity">Quantity</label>
+                        <input type="number" id="quantity" name="quantity" value="1" min="1">
+                    </div>
+                    <input type="hidden" name="id" value="{{ coffee.id }}">
+                    <input type="submit" value="Add to Cart">
+                </form>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Queue Screen</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        .column {
+            flex: 1;
+            margin: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        h2 {
+            text-align: center;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="column" id="preparing-orders">
+        <h2>Preparing Orders</h2>
+        <ul id="preparing-list">
+            <!-- Preparing orders will be dynamically added here -->
+        </ul>
+    </div>
+    <div class="column" id="serving-orders">
+        <h2>Serving Orders</h2>
+        <ul id="serving-list">
+            <!-- Serving orders will be dynamically added here -->
+        </ul>
+    </div>
+
+    <script>
+        // Function to fetch and update orders
+        function updateOrders() {
+            fetch('/get_orders') // Endpoint to fetch orders
+            .then(response => response.json())
+            .then(data => {
+                // Clear previous orders
+                document.getElementById('preparing-list').innerHTML = '';
+                document.getElementById('serving-list').innerHTML = '';
+                
+                // Update preparing orders
+                data.preparing_orders.forEach(order => {
+                    document.getElementById('preparing-list').innerHTML += '<li>' + order.order_number + '</li>';
+                });
+
+                // Update serving orders
+                data.serving_orders.forEach(order => {
+                    document.getElementById('serving-list').innerHTML += '<li>' + order.order_number + '</li>';
+                });
+            });
+        }
+
+        // Initial call to update orders
+        updateOrders();
+
+        // Set interval to update orders every 10 seconds
+        setInterval(updateOrders, 5000);
+    </script>
+</body>
+</html>

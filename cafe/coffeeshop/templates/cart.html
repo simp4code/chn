@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<style>
+    /* Styles for the cart items list */
+    ul {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    li {
+        margin-bottom: 5px;
+    }
+
+    /* Styles for the checkout button */
+    button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        cursor: pointer;
+        border-radius: 5px;
+        transition-duration: 0.4s;
+    }
+
+    button:hover {
+        background-color: #45a049;
+    }
+
+    /* Styles for the total price paragraph */
+    p {
+        margin-top: 10px;
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    /* Close button style */
+    .close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 20px;
+        cursor: pointer;
+    }
+</style>
+<!-- Add the close button inside the modal -->
+<span class="close" id="close-modal">&times;</span>
+
+<ul>
+    {% if cart_items %}
+        {% for item in cart_items %}
+            <li>{{ item.product.name }} - Quantity: {{ item.quantity }} - Total: {{ item.total_price }}</li>
+        {% endfor %}
+    {% else %}
+        <li>No orders yet</li>
+    {% endif %}
+</ul>
+
+<p>Total Price: {{ total_price }}</p>
+{% if cart_items %}
+    <a href="{% url 'checkout'%}">Check-out</a>
+{% endif %}
+
+
+<!-- Your JavaScript code -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var closeModalBtn = document.getElementById("close-modal");
+
+        // Function to close the modal
+        function closeModal() {
+            var modal = document.getElementById("cart-modal");
+            modal.style.display = "none";
+        }
+
+        // Event listener to close the modal when clicking the close button
+        closeModalBtn.addEventListener("click", function () {
+            closeModal();
+        });
+
+        // Event listener to close the modal when clicking outside of it
+        window.onclick = function (event) {
+            var modal = document.getElementById("cart-modal");
+            if (event.target == modal) {
+                closeModal();
+            }
+        };
+    });
+</script>
+
+</html>

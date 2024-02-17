@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt</title>
+    <style>
+        /* Add your custom CSS styles for the receipt here */
+    </style>
+</head>
+<body>
+    <h1>Receipt</h1>
+    <p>Order ID: {{ order.id }}</p>
+    <p>Cart Items:</p>
+    <ul>
+        {% for item in order.cart_items|decode_cart_items %}
+            <li>{{ item }}</li>
+        {% endfor %}
+    </ul>
+    <p>Total Price: {{ order.total_price }}</p>
+    <p>Verification Code: {{ order.verification_code }}</p>
+    <p>Order Number: {{ order.order_number }}</p>
+</body>
+</html>

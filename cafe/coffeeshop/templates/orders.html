@@ -1,0 +1,105 @@
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Orders</h1>
+    
+    <h2>Preparing Orders</h2>
+    <table>
+    <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Cart Items</th>
+            <th>Total Price</th>
+            <th>Verification Code</th>
+            <th>Order Number</th>
+            <th>Action</th>
+            <th>Receipt</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+    {% if order.status == 'preparing' %}
+    <tr>
+        <td>{{ order.id }}</td>
+        <td>
+            {% for item in order.cart_items|decode_cart_items %}
+                {{ item }}<br>
+            {% endfor %}
+        </td>
+        <td>{{ order.total_price }}</td>
+        <td>{{ order.verification_code }}</td>
+        <td>{{ order.order_number }}</td>
+        <td>
+            <form action="{% url 'update_status' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="order_id" value="{{ order.id }}">
+                <input type="checkbox" name="serve_order"> Serve
+                <button type="submit">Update</button>
+            </form>
+        </td>
+        <td>
+            <a href="{% url 'download_receipt' order.id %}" download>Receipt</a>
+        </td>
+        
+    </tr>
+    {% endif %}
+{% endfor %}
+
+    
+    </tbody>
+</table>
+
+
+    
+    <h2>Serving Orders</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Cart Items</th>
+                <th>Total Price</th>
+                <th>Verification Code</th>
+                <th>Order Number</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+                {% if order.status == 'serving' %}
+                <tr>
+                    <td>{{ order.id }}</td>
+                    <td>
+                        {% for item in order.cart_items|decode_cart_items %}
+                            {{ item }}<br>
+                        {% endfor %}
+                    </td>
+                    <td>{{ order.total_price }}</td>
+                    <td>{{ order.verification_code }}</td>
+                    <td>{{ order.order_number }}</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

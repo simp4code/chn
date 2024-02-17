@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Data</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .verification-form {
+            margin-bottom: 20px;
+        }
+        .verification-input {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Generated QR Codes</h1>
+    <div class="verification-form">
+        <form action="{% url 'verify' %}" method="post">
+            {% csrf_token %}
+            <label for="verification">Enter Verification Code:</label>
+            <input type="text" id="verification" name="verification_code" class="verification-input">
+            <button type="submit">Verify</button>
+        </form>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Verification Code</th>
+                <th>Cart Items</th>
+                <th>Total Price</th>
+                <th>Verified</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for qr_code_data in qr_code_data %}
+                <tr>
+                    <td>{{ qr_code_data.verification_code }}</td>
+                    <td>{{ qr_code_data.cart_items }}</td>
+                    <td>{{ qr_code_data.total_price }}</td>
+                    <td>{% if qr_code_data.verified %}Yes{% else %}No{% endif %}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
