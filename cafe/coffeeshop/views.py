@@ -6,6 +6,7 @@ from .forms import FileForm, VerificationForm
 from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 import logging
 import os
 from django.core.serializers import serialize
@@ -26,48 +27,54 @@ from django.http import HttpResponse
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import authenticate, login
+from django.shortcuts import render, redirect
+from django.contrib.auth import logout
 
-def generate_receipt_image(order):
+def admin_login(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            return redirect('admin')  # Change 'admin_dashboard' to your actual admin page URL
+        else:
+            error_message = 'Invalid username or password. Please try again.'
+            return render(request, 'admin_login.html', {'error_message': error_message})
+
+    return render(request, 'admin_login.html')
+
+def view_queue(request):
+    return render(request, 'u_queue.html')
+
+@csrf_exempt
+def update_order_status(request, order_number):
     try:
-        # Render receipt HTML template with order details
-        receipt_html = render_to_string('receipt.html', {'order': order})
+        order = Orders.objects.get(order_number=order_number, status='serving')
+        order.status = 'served'
+        order.save()
+        return JsonResponse({'success': True})
+    except Orders.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Order not found or status not "serving"'})
 
-        # Create a blank image
-        width, height = 600, 800
-        image = Image.new('RGB', (width, height), color='white')
-        draw = ImageDraw.Draw(image)
-
-        # Load a font
-        font = ImageFont.truetype("arial.ttf", 20)
-
-        # Draw the receipt HTML text on the image
-        draw.text((50, 50), receipt_html, fill='black', font=font)
-
-        return image
-    except Exception as e:
-        # Log or handle the exception appropriately
-        raise RuntimeError(f"Error generating receipt image: {e}")
-
+def admin_logout(request):
+    logout(request)
+    return redirect('admin_login')
+    
+@login_required(login_url='admin_login')
 def download_receipt(request, order_id):
-    try:
-        # Retrieve order details
-        order = get_object_or_404(Orders, id=order_id)
-
-        # Generate receipt image
-        receipt_image = generate_receipt_image(order)
-
-        # Convert image to bytes
-        image_bytes = BytesIO()
-        receipt_image.save(image_bytes, format='PNG')
-        image_bytes.seek(0)
-
-        # Return the receipt as a downloadable file
-        response = HttpResponse(image_bytes, content_type='image/png')
-        response['Content-Disposition'] = f'attachment; filename="receipt_{order_id}.png"'
-        return response
-    except Exception as e:
-        # Log or handle the exception appropriately
-        return HttpResponse(f"Error downloading receipt: {e}", status=500)
+    order = get_object_or_404(Orders, pk=order_id)
+    vat = float(order.total_price) * 0.1
+    subtotal = float(order.total_price) - vat
+    context = {
+        'order': order,
+        'vat':vat,
+        'subtotal':subtotal,
+    }
+    return render(request, 'receipt.html', context)
 
 
 def update_status(request):
@@ -98,6 +105,7 @@ def get_orders(request):
     }
     return JsonResponse(data)
 
+@login_required(login_url='admin_login')
 def queue_screen(request):
     preparing_orders = Orders.objects.filter(status='preparing')
     serving_orders = Orders.objects.filter(status='serving')
@@ -121,14 +129,15 @@ def extract_latest_created_at(order):
                 latest_date = item_created_at
     
     return latest_date
-
+@login_required(login_url='admin_login')
 def verified_orders(request):
     orders = Orders.objects.all().order_by('id')  # Order queryset by ID
     context = {
         'orders': orders,
     }
     return render(request, 'orders.html', context)
-    
+
+@login_required(login_url='admin_login')    
 def verify(request):
     if request.method == 'POST':
         form = VerificationForm(request.POST)
@@ -164,7 +173,7 @@ def verify(request):
                 'form':form
             }
     return render(request, 'qrcodes.html', context)
-
+@login_required(login_url='admin_login')
 def qrs(request):
     qr = QRCodeData.objects.all()
     context={
@@ -232,7 +241,7 @@ def index(request):
     return render(request, 'index.html', {'coffees': coffees})
 
 
-
+@login_required(login_url='admin_login')
 def display_admin(request):
   pdf_list = Product.objects.all().values() 
   file_count = len(pdf_list)
@@ -278,7 +287,7 @@ def view_cart(request):
     cart_items = Cart.objects.all()
     total_price = sum(item.total_price() for item in cart_items)
     return render(request, 'cart.html', {'cart_items': cart_items, 'total_price': total_price})
-   
+@login_required(login_url='admin_login')   
 def add_product(request):
     if request.method == 'POST':
         product_image = request.FILES.get('img')
@@ -295,7 +304,7 @@ def add_product(request):
         return redirect('admin') 
 
     return render(request, 'add_product.html')
-
+@login_required(login_url='admin_login')
 def update_product(request, pk):
     obj = get_object_or_404(Product, pk=pk)
 
@@ -309,7 +318,7 @@ def update_product(request, pk):
         return redirect('admin') 
 
     return render(request, 'update_product.html', {'obj': obj})
-
+@login_required(login_url='admin_login')
 def delete_product(request, pk):
     obj = get_object_or_404(Product, pk=pk)
 

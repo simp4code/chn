@@ -1,3 +1,4 @@
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,20 +6,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Receipt</title>
     <style>
-        /* Add your custom CSS styles for the receipt here */
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h5 {
+            text-align: center;
+        }
+
+        p {
+            margin: 10px 0;
+        }
+
+        ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .vat {
+            margin-top: 10px;
+        }
     </style>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 </head>
 <body>
-    <h1>Receipt</h1>
-    <p>Order ID: {{ order.id }}</p>
-    <p>Cart Items:</p>
+    <h1>CHN Cafe</h1>
+    <h5>Kapasigan Pasig</h5>
+    <br>
+    <br>
+    <p><b>Order ID:</b> {{ order.id }}</p>
+    <p><b>Verification Code:</b> {{ order.verification_code }}</p>
+    <p><b>Order Number:</b> {{ order.order_number }}</p>
+    <center><p>------------------------------------------------------------------</p></center>
+    <p>Orders</p>
+    <br>
+    
     <ul>
         {% for item in order.cart_items|decode_cart_items %}
-            <li>{{ item }}</li>
+            <li>&nbsp;&nbsp;&nbsp;&nbsp;{{ item }}</li>
         {% endfor %}
     </ul>
-    <p>Total Price: {{ order.total_price }}</p>
-    <p>Verification Code: {{ order.verification_code }}</p>
-    <p>Order Number: {{ order.order_number }}</p>
+    
+    <br>
+    <center><p>------------------------------------------------------------------</p></center>
+    <p class="total"><b>Sub-Total: </b>Php {{ subtotal }}</p>
+    
+    <div class="vat">
+        <p><b>VAT (10%): </b>Php {{ vat }}</p>
+        <!-- Add other computations as needed -->
+        <!--<p><b>Additional Charges: </b>{{ order.additional_charges }}</p>-->
+        <p><b>Total (Including VAT): </b>Php {{ order.total_price }}</p>
+    </div>
+
+    <!-- ... rest of your HTML ... -->
+    <button id="downloadBtn" onclick="downloadReceipt()">Download Receipt</button>
+
+    <script>
+        function downloadReceipt() {
+            // Get the receipt container element
+            var receiptContainer = document.body;
+            document.getElementById('downloadBtn').style.display = 'none';
+            // Use html2canvas to convert the container to an image
+            html2canvas(receiptContainer).then(function(canvas) {
+                // Create a link element
+                var link = document.createElement('a');
+
+                // Convert the canvas to a data URL
+                var dataURL = canvas.toDataURL('image/png');
+
+                // Set the download attribute and create a data URI
+                link.download = 'receipt.png';
+                link.href = dataURL;
+
+                // Append the link to the body and trigger the click event
+                document.body.appendChild(link);
+                link.click();
+
+                // Remove the link from the body
+                document.body.removeChild(link);
+                window.location.href = '{% url "verified_orders" %}';
+                
+            });
+        }
+    </script>
 </body>
 </html>

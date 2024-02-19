@@ -1,79 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Queue Screen</title>
     <style>
         body {
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
             margin: 0;
             padding: 0;
         }
-        .column {
-            flex: 1;
+
+        .navbar {
+            background-color: #333;
+            padding: 10px;
+
+            margin-bottom: 0;
+            /* Remove default margin */
+        }
+
+        .nav-link {
+            color: white;
+            margin-right: 10px;
+        }
+
+        .db_holder {
+            display: flex;
+            gap: 20px;
+            justify-content: space-around;
             margin: 20px;
+        }
+
+        .dashboard-panel {
+            background-color: #fff;
+            padding: 10px;
+            width: 300px;
+            height: 150px;
+            border-radius: 15px;
+            box-shadow: 0 3px 10px rgb(0 0 0 / 1);
+        }
+
+        a {
+            color: #333;
+            text-decoration: none;
+            margin-right: 10px;
+        }
+
+        a:hover {
+            color: #000;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .db_holder {
+                flex-direction: column;
+            }
+
+            .dashboard-panel {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+        }
+
+        .column {
+            margin: 20px;
+            align-items: center;
+            justify-content: center;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
+            background-color: #fff;
+            color: #333;
+            text-align: center;
+            width: 80%;
+            /* Adjust the width as needed */
+            max-width: 600px;
+            /* Set a max-width if desired */
         }
+
         h2 {
             text-align: center;
         }
+
         ul {
             list-style-type: none;
             padding: 0;
         }
+
         li {
             margin-bottom: 10px;
             font-size: 18px;
         }
     </style>
 </head>
+
 <body>
-    <div class="column" id="preparing-orders">
-        <h2>Preparing Orders</h2>
-        <ul id="preparing-list">
-            <!-- Preparing orders will be dynamically added here -->
-        </ul>
-    </div>
-    <div class="column" id="serving-orders">
-        <h2>Serving Orders</h2>
-        <ul id="serving-list">
-            <!-- Serving orders will be dynamically added here -->
-        </ul>
-    </div>
+    <nav class="navbar">
+        <a class="nav-link" href="{% url 'index' %}">CHNCafe</a>
+        <a class="nav-link" href="{% url 'admin' %}">Administrator</a>
+        <a class="nav-link" href="{% url 'add' %}">Add Product</a>
+        <a class="nav-link" href="{% url 'qrs' %}">Order QR</a>
+        <a class="nav-link" href="{% url 'verified_orders' %}">Verified Order</a>
+        <a class="nav-link" href="{% url 'admin_logout' %}">Log-out</a>
+
+    </nav>
+    <center>
+        <div class="column" id="preparing-orders">
+            <h2>Preparing Orders</h2>
+            <ul id="preparing-list">
+                <!-- Preparing orders will be dynamically added here -->
+            </ul>
+        </div>
+        <div class="column" id="serving-orders">
+            <h2>Serving Orders</h2>
+            <ul id="serving-list">
+                <!-- Serving orders will be dynamically added here -->
+            </ul>
+        </div>
+    </center>
+    
 
     <script>
         // Function to fetch and update orders
         function updateOrders() {
             fetch('/get_orders') // Endpoint to fetch orders
-            .then(response => response.json())
-            .then(data => {
-                // Clear previous orders
-                document.getElementById('preparing-list').innerHTML = '';
-                document.getElementById('serving-list').innerHTML = '';
-                
-                // Update preparing orders
-                data.preparing_orders.forEach(order => {
-                    document.getElementById('preparing-list').innerHTML += '<li>' + order.order_number + '</li>';
+                .then(response => response.json())
+                .then(data => {
+                    // Clear previous orders
+                    document.getElementById('preparing-list').innerHTML = '';
+                    document.getElementById('serving-list').innerHTML = '';
+    
+                    // Update preparing orders
+                    data.preparing_orders.forEach(order => {
+                        document.getElementById('preparing-list').innerHTML += '<li>' + order.order_number + '</li>';
+                    });
+    
+                    // Update serving orders
+                    data.serving_orders.forEach(order => {
+                        document.getElementById('serving-list').innerHTML += '<li>' + order.order_number + '</li>';
+                    });
+    
+                    // Remove the most top serving order after 30 seconds
+                    setTimeout(() => {
+                        var servingList = document.getElementById('serving-list');
+                        if (servingList.firstChild) {
+                            var orderNumber = servingList.firstChild.innerText;
+                            servingList.removeChild(servingList.firstChild);
+    
+                            // Call the Django view to update the order status to "served"
+                            fetch(`/update_order_status/${orderNumber}/`, { method: 'POST' })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        console.log('Order status updated to "served"');
+                                    } else {
+                                        console.error(data.message);
+                                    }
+                                });
+                        }
+                    }, 30000);
                 });
-
-                // Update serving orders
-                data.serving_orders.forEach(order => {
-                    document.getElementById('serving-list').innerHTML += '<li>' + order.order_number + '</li>';
-                });
-            });
         }
-
+    
         // Initial call to update orders
         updateOrders();
-
-        // Set interval to update orders every 10 seconds
-        setInterval(updateOrders, 5000);
+    
+        // Set interval to update orders every 30 seconds
+        setInterval(updateOrders, 30000);
     </script>
+    
+    
 </body>
+
 </html>
